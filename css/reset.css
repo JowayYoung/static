@@ -1,38 +1,33 @@
 /* 初始化 */
 a,
 abbr,
-acronym,
 address,
-applet,
 area,
 article,
 aside,
 audio,
 b,
 base,
-basefont,
 bdi,
 bdo,
-big,
 blockquote,
 body,
 br,
 button,
 canvas,
 caption,
-center,
 cite,
 code,
 col,
 colgroup,
+data,
 datalist,
 dd,
 del,
 details,
-dir,
-div,
 dfn,
 dialog,
+div,
 dl,
 dt,
 em,
@@ -40,11 +35,8 @@ embed,
 fieldset,
 figcaption,
 figure,
-font,
 footer,
 form,
-frame,
-frameset,
 h1,
 h2,
 h3,
@@ -53,6 +45,7 @@ h5,
 h6,
 head,
 header,
+hgroup,
 hr,
 html,
 i,
@@ -60,13 +53,12 @@ iframe,
 img,
 input,
 ins,
-isindex,
 kbd,
-keygen,
 label,
 legend,
 li,
 link,
+main,
 map,
 mark,
 menu,
@@ -82,6 +74,7 @@ option,
 output,
 p,
 param,
+picture,
 pre,
 progress,
 q,
@@ -96,7 +89,6 @@ select,
 small,
 source,
 span,
-strike,
 strong,
 style,
 sub,
@@ -105,6 +97,7 @@ sup,
 table,
 tbody,
 td,
+template,
 textarea,
 tfoot,
 th,
@@ -113,27 +106,25 @@ time,
 title,
 tr,
 track,
-tt,
 u,
 ul,
 var,
 video,
 wbr,
-xmp {
-	box-sizing: border-box;
-	margin: 0;
-	padding: 0;
-}
-*::before,
-*::after {
+::before,
+::after {
 	box-sizing: border-box;
 	margin: 0;
 	padding: 0;
 }
 body {
-	font: 14px/1 "PingFang SC", "Microsoft YaHei", sans-serif;
+	line-height: 1;
+	font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+	font-size: 14px;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+	-webkit-overflow-scrolling: touch;
+	-webkit-tap-highlight-color: transparent;
 }
 img {
 	display: block;
@@ -150,6 +141,7 @@ button,
 input,
 select,
 textarea {
+	display: block;
 	outline: none;
 }
 a,
@@ -238,12 +230,11 @@ a:active {
 .flex-fs {
 	display: flex;
 	flex-wrap: wrap;
-	justify-content: space-between;
-	align-content: space-between;
+	place-content: space-between space-between;
 }
 /* 动画模式 */
 .td-camera {
-	perspective: 1000;
+	perspective: 1000px;
 }
 .td-space {
 	transform-style: preserve-3d;
@@ -254,12 +245,9 @@ a:active {
 .gpu-speed {
 	transform: translate3d(0, 0, 0);
 }
-/* 其他 */
+/* 其它 */
 .fullscreen {
-	left: 0;
-	right: 0;
-	top: 0;
-	bottom: 0;
+	inset: 0;
 }
 .ellipsis {
 	overflow: hidden;
@@ -278,9 +266,4 @@ a:active {
 }
 .round {
 	border-radius: 100%;
-}
-/* 全局 */
-.bruce {
-	overflow: hidden;
-	height: 100vh;
 }
