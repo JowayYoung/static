@@ -1,0 +1,175 @@
+{
+	"mcpServers": {
+		"amap": {
+			"args": [
+				"-y",
+				"@amap/amap-maps-mcp-server"
+			],
+			"command": "npx",
+			"env": {
+				"AMAP_MAPS_API_KEY": ""
+			}
+		},
+		"baidu-map": {
+			"args": [
+				"-y",
+				"@baidumap/mcp-server-baidu-map"
+			],
+			"command": "npx",
+			"env": {
+				"BAIDU_MAP_API_KEY": ""
+			}
+		},
+		"browser-tools": {
+			"args": [
+				"-y",
+				"@agentdeskai/browser-tools-mcp@latest"
+			],
+			"command": "npx",
+			"fromGalleryId": "AgentDeskAI.browser-tools-mcp"
+		},
+		"duckduckgo": {
+			"args": [
+				"duckduckgo-mcp-server"
+			],
+			"command": "uvx",
+			"fromGalleryId": "nickclyde.duckduckgo-mcp-server"
+		},
+		"fetch": {
+			"args": [
+				"mcp-server-fetch"
+			],
+			"command": "uvx",
+			"fromGalleryId": "modelcontextprotocol.servers_fetch"
+		},
+		"figma": {
+			"args": [
+				"-y",
+				"figma-developer-mcp",
+				"--stdio"
+			],
+			"command": "npx",
+			"env": {
+				"FIGMA_API_KEY": ""
+			},
+			"fromGalleryId": "GLips.Figma-Context-MCP"
+		},
+		"firecrawl": {
+			"args": [
+				"-y",
+				"firecrawl-mcp"
+			],
+			"command": "npx",
+			"env": {
+				"FIRECRAWL_API_KEY": ""
+			},
+			"fromGalleryId": "mendableai.firecrawl-mcp-server"
+		},
+		"git": {
+			"args": [
+				"mcp-server-git",
+				"--repository",
+				"/Users/yangzw/Documents/学习/Github/knowledge-planet"
+			],
+			"command": "uvx",
+			"fromGalleryId": "modelcontextprotocol.servers_git"
+		},
+		"github": {
+			"args": [
+				"-y",
+				"@modelcontextprotocol/server-github"
+			],
+			"command": "npx",
+			"env": {
+				"GITHUB_PERSONAL_ACCESS_TOKEN": ""
+			},
+			"fromGalleryId": "modelcontextprotocol.servers_github"
+		},
+		"hotnews": {
+			"args": [
+				"-y",
+				"@wopal/mcp-server-hotnews"
+			],
+			"command": "npx",
+			"fromGalleryId": "wopal-cn.mcp-hotnews-server"
+		},
+		"iterm": {
+			"args": [
+				"-y",
+				"iterm-mcp"
+			],
+			"command": "npx"
+		},
+		"memory": {
+			"args": [
+				"-y",
+				"@modelcontextprotocol/server-memory"
+			],
+			"command": "npx",
+			"fromGalleryId": "modelcontextprotocol.servers_memory"
+		},
+		"mongodb": {
+			"args": [
+				"-y",
+				"mcp-mongo-server"
+			],
+			"command": "npx",
+			"env": {
+				"MCP_MONGODB_URI": "mongodb://<username>:<password>@<host>:<port>/<database>?authSource=admin",
+				"MCP_MONGODB_READONLY": "true"
+			},
+			"fromGalleryId": "kiliczsh.mcp-mongo-server"
+		},
+		"puppeteer": {
+			"args": [
+				"-y",
+				"@modelcontextprotocol/server-puppeteer"
+			],
+			"command": "npx",
+			"env": {
+				"PUPPETEER_EXECUTABLE_PATH": "/Applications/Chrome.app/Contents/MacOS/Google Chrome"
+			},
+			"fromGalleryId": "modelcontextprotocol.servers_puppeteer"
+		},
+		"quickchart": {
+			"args": [
+				"-y",
+				"@gongrzhe/quickchart-mcp-server"
+			],
+			"command": "npx"
+		},
+		"sequential-thinking": {
+			"args": [
+				"-y",
+				"@modelcontextprotocol/server-sequential-thinking"
+			],
+			"command": "npx",
+			"fromGalleryId": "modelcontextprotocol.servers_sequentialthinking"
+		},
+		"software-planning": {
+			"args": [
+				"/Users/yangzw/Documents/记录/MCP/software-planning-mcp/build/index.js"
+			],
+			"command": "node"
+		},
+		"tavily": {
+			"args": [
+				"-y",
+				"tavily-mcp"
+			],
+			"command": "npx",
+			"env": {
+				"TAVILY_API_KEY": ""
+			},
+			"fromGalleryId": "tavily-ai.tavily-mcp"
+		},
+		"time": {
+			"args": [
+				"mcp-server-time",
+				"--local-timezone=Asia/Shanghai"
+			],
+			"command": "uvx",
+			"fromGalleryId": "modelcontextprotocol.servers_time"
+		}
+	}
+}
