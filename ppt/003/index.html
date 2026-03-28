@@ -1,0 +1,1873 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>重构生产关系：Trae 驱动的前端基建工程化治理</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+	<style>
+		/* ===========================================
+           CSS CUSTOM PROPERTIES (THEME)
+           背景黑色#000，主题绿#00f581，文字白#fff
+           =========================================== */
+		:root {
+			--bg-primary: #000;
+			--bg-secondary: #0a0a0a;
+			--bg-card: #111;
+			--text-primary: #fff;
+			--text-secondary: #b0b0b0;
+			--accent: #00f581;
+			--accent-dim: #00a85a;
+			--accent-glow: rgb(0, 245, 129, 0.3);
+			--accent-subtle: rgb(0, 245, 129, 0.1);
+			--font-display: 'Noto Sans SC', sans-serif;
+			--font-mono: 'Space Mono', monospace;
+			--title-size: clamp(2rem, 6vw, 4.5rem);
+			--h2-size: clamp(1.5rem, 4vw, 3rem);
+			--h3-size: clamp(1.1rem, 2.5vw, 1.75rem);
+			--body-size: clamp(0.85rem, 1.5vw, 1.25rem);
+			--small-size: clamp(0.7rem, 1vw, 0.95rem);
+			--slide-padding: clamp(1.5rem, 5vw, 5rem);
+			--content-gap: clamp(1rem, 2.5vw, 2.5rem);
+			--element-gap: clamp(0.5rem, 1.5vw, 1.5rem);
+			--ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+			--ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+			--duration-normal: 0.8s;
+			--duration-fast: 0.4s;
+		}
+		/* ===========================================
+           BASE STYLES
+           =========================================== */
+		* {
+			box-sizing: border-box;
+			margin: 0;
+			padding: 0;
+		}
+		html {
+			scroll-snap-type: y mandatory;
+			scroll-behavior: smooth;
+		}
+		body {
+			overflow-x: hidden;
+			background: var(--bg-primary);
+			line-height: 1.6;
+			font-family: var(--font-display);
+			color: var(--text-primary);
+		}
+		/* ===========================================
+           SLIDE BASE
+           =========================================== */
+		.slide {
+			display: flex;
+			overflow: hidden;
+			scroll-snap-align: start;
+			position: relative;
+			flex-direction: column;
+			width: 100vw;
+			height: 100vh;
+			height: 100dvh;
+			background: var(--bg-primary);
+		}
+		.slide-content {
+			display: flex;
+			overflow: hidden;
+			position: relative;
+			z-index: 2;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			flex: 1;
+			padding: var(--slide-padding);
+			max-height: 100%;
+			text-align: center;
+		}
+		.slide-inner {
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			margin: 0 auto;
+			width: 100%;
+			max-width: 1200px;
+			min-height: 100%;
+			text-align: center;
+		}
+		.slide-inner>* {
+			max-width: 100%;
+		}
+		/* ===========================================
+           TYPOGRAPHY
+           =========================================== */
+		h1 {
+			margin-bottom: var(--content-gap);
+			line-height: 1.1;
+			font-weight: 900;
+			font-size: var(--title-size);
+			letter-spacing: -0.02em;
+		}
+		h2 {
+			margin-bottom: var(--content-gap);
+			line-height: 1.2;
+			font-weight: 700;
+			font-size: var(--h2-size);
+		}
+		h3 {
+			margin-bottom: var(--element-gap);
+			line-height: 1.3;
+			font-weight: 500;
+			font-size: var(--h3-size);
+		}
+		p,
+		li {
+			line-height: 1.7;
+			font-size: var(--body-size);
+			color: var(--text-secondary);
+		}
+		.subtitle {
+			margin-bottom: var(--element-gap);
+			font-weight: 300;
+			font-size: clamp(1rem, 2vw, 1.5rem);
+			color: var(--text-secondary);
+		}
+		.accent {
+			color: var(--accent);
+		}
+		.mono {
+			font-family: var(--font-mono);
+		}
+		/* ===========================================
+           DECORATIVE ELEMENTS
+           =========================================== */
+		.cover-bg {
+			position: absolute;
+			inset: 0;
+			z-index: 0;
+			background-image: url('./cover.png');
+			background-repeat: no-repeat;
+			background-position: center;
+			background-size: 60% auto;
+		}
+		.grid-bg {
+			position: absolute;
+			inset: 0;
+			z-index: 0;
+			background-image:
+				linear-gradient(rgb(0, 245, 129, 0.03) 1px, transparent 1px),
+				linear-gradient(90deg, rgb(0, 245, 129, 0.03) 1px, transparent 1px);
+			background-size: 60px 60px;
+		}
+		.glow-orb {
+			position: absolute;
+			z-index: 0;
+			border-radius: 50%;
+			filter: blur(100px);
+			opacity: 0.5;
+			pointer-events: none;
+		}
+		.glow-orb.top-right {
+			right: -100px;
+			top: -100px;
+			width: 400px;
+			height: 400px;
+			background: var(--accent);
+			opacity: 0.15;
+		}
+		.glow-orb.bottom-left {
+			left: -50px;
+			bottom: -50px;
+			width: 300px;
+			height: 300px;
+			background: var(--accent);
+			opacity: 0.1;
+		}
+		.slide-number {
+			position: absolute;
+			right: var(--slide-padding);
+			bottom: var(--slide-padding);
+			z-index: 10;
+			opacity: 0.5;
+			font-family: var(--font-mono);
+			font-size: var(--small-size);
+			color: var(--text-secondary);
+		}
+		.slide-tag {
+			display: inline-block;
+			margin-bottom: var(--element-gap);
+			padding: 0.3em 1em;
+			border: 1px solid var(--accent);
+			border-radius: 2em;
+			text-transform: uppercase;
+			font-size: var(--small-size);
+			color: var(--accent);
+			letter-spacing: 0.1em;
+		}
+		/* ===========================================
+           CARD STYLES
+           =========================================== */
+		.card {
+			overflow: hidden;
+			position: relative;
+			padding: clamp(1rem, 2vw, 1.5rem);
+			border: 1px solid rgb(0, 245, 129, 0.2);
+			border-radius: 12px;
+			background: var(--bg-card);
+			text-align: left;
+		}
+		.card::before {
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: 0;
+			height: 2px;
+			background: linear-gradient(90deg, transparent, var(--accent), transparent);
+			opacity: 0.5;
+			content: '';
+		}
+		.card-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+			gap: var(--element-gap);
+			width: 100%;
+			text-align: left;
+		}
+		.card h3 {
+			margin-bottom: 0.5em;
+			color: var(--text-primary);
+		}
+		.card p {
+			font-size: var(--small-size);
+		}
+		.card .card-icon {
+			margin-bottom: 0.5em;
+			font-size: 2em;
+		}
+		/* ===========================================
+           LIST STYLES
+           =========================================== */
+		.feature-list {
+			display: flex;
+			list-style: none;
+			flex-direction: column;
+			gap: var(--element-gap);
+			max-width: 900px;
+			text-align: left;
+		}
+		.feature-list li {
+			display: flex;
+			align-items: flex-start;
+			gap: 1em;
+			font-size: var(--body-size);
+		}
+		.feature-list li::before {
+			flex-shrink: 0;
+			line-height: 1.4;
+			font-size: 1.2em;
+			color: var(--accent);
+			content: '▸';
+		}
+		.feature-list.numbered li::before {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			border-radius: 50%;
+			width: 1.5em;
+			height: 1.5em;
+			background: var(--accent);
+			font-weight: 700;
+			font-size: 0.8em;
+			color: var(--bg-primary);
+			content: counter(item);
+			counter-increment: item;
+		}
+		.feature-list.numbered {
+			counter-reset: item;
+		}
+		/* ===========================================
+           QUOTE / CALLOUT
+           =========================================== */
+		.quote {
+			position: relative;
+			margin: var(--content-gap) 0;
+			padding: 2em 3em;
+		}
+		.quote::before {
+			position: absolute;
+			left: 0;
+			top: 0;
+			opacity: 0.3;
+			line-height: 1;
+			font-family: Georgia, serif;
+			font-size: 6em;
+			color: var(--accent);
+			content: '"';
+		}
+		.quote p {
+			line-height: 1.5;
+			font-style: italic;
+			font-weight: 300;
+			font-size: clamp(1.2rem, 2.5vw, 2rem);
+			color: var(--text-primary);
+		}
+		.quote-author {
+			margin-top: 1em;
+			font-size: var(--small-size);
+			color: var(--accent);
+		}
+		/* ===========================================
+           COMPARISON LAYOUT
+           =========================================== */
+		.comparison {
+			display: grid;
+			align-items: center;
+			grid-template-columns: 1fr auto 1fr;
+			gap: var(--element-gap);
+			width: 100%;
+			max-width: 1000px;
+		}
+		.comparison-item {
+			padding: 1.5em;
+			border-radius: 12px;
+			text-align: left;
+		}
+		.comparison-item.bad {
+			border: 1px solid rgb(255, 100, 100, 0.3);
+			background: rgb(255, 100, 100, 0.1);
+		}
+		.comparison-item.good {
+			border: 1px solid rgb(0, 245, 129, 0.3);
+			background: rgb(0, 245, 129, 0.1);
+		}
+		.comparison-divider {
+			font-size: 2em;
+			color: var(--accent);
+		}
+		.comparison-label {
+			margin-bottom: 0.5em;
+			font-weight: 700;
+			font-size: var(--small-size);
+			letter-spacing: 0.1em;
+		}
+		.comparison-item.bad .comparison-label {
+			color: #ff6b6b;
+		}
+		.comparison-item.good .comparison-label {
+			color: var(--accent);
+		}
+		/* ===========================================
+           TABLE STYLES
+           =========================================== */
+		.module-table {
+			border-collapse: collapse;
+			margin: var(--content-gap) 0;
+			width: 100%;
+			max-width: 900px;
+		}
+		.module-table th,
+		.module-table td {
+			padding: 0.8em 1.2em;
+			border-bottom: 1px solid rgb(255, 255, 255, 0.1);
+			text-align: left;
+			font-size: var(--small-size);
+		}
+		.module-table th {
+			text-transform: uppercase;
+			font-weight: 600;
+			font-size: calc(var(--small-size) * 0.9);
+			color: var(--accent);
+			letter-spacing: 0.05em;
+		}
+		.module-table td:first-child {
+			font-weight: 500;
+			color: var(--text-primary);
+		}
+		.status-badge {
+			display: inline-block;
+			padding: 0.2em 0.6em;
+			border-radius: 1em;
+			font-weight: 500;
+			font-size: 0.85em;
+		}
+		.status-badge.done {
+			background: rgb(0, 245, 129, 0.2);
+			color: var(--accent);
+		}
+		.status-badge.pending {
+			background: rgb(255, 200, 0, 0.2);
+			color: #ffc800;
+		}
+		/* ===========================================
+           FLOW DIAGRAM
+           =========================================== */
+		.flow {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+			align-items: center;
+			gap: clamp(0.5rem, 2vw, 2rem);
+			margin: var(--content-gap) 0;
+		}
+		.flow-item {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 0.5em;
+			padding: 1em;
+		}
+		.flow-icon {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			border: 2px solid var(--accent);
+			border-radius: 50%;
+			width: 60px;
+			height: 60px;
+			background: var(--bg-card);
+			font-size: 1.5em;
+		}
+		.flow-arrow {
+			opacity: 0.5;
+			font-size: 1.5em;
+			color: var(--accent);
+		}
+		/* ===========================================
+           ANIMATIONS
+           =========================================== */
+		.reveal {
+			opacity: 0;
+			transform: translateY(40px);
+			transition: opacity var(--duration-normal) var(--ease-out-expo),
+				transform var(--duration-normal) var(--ease-out-expo);
+		}
+		.slide.visible .reveal {
+			opacity: 1;
+			transform: translateY(0);
+		}
+		.reveal:nth-child(1) {
+			transition-delay: 0.1s;
+		}
+		.reveal:nth-child(2) {
+			transition-delay: 0.2s;
+		}
+		.reveal:nth-child(3) {
+			transition-delay: 0.3s;
+		}
+		.reveal:nth-child(4) {
+			transition-delay: 0.4s;
+		}
+		.reveal:nth-child(5) {
+			transition-delay: 0.5s;
+		}
+		.reveal:nth-child(6) {
+			transition-delay: 0.6s;
+		}
+		.reveal-scale {
+			opacity: 0;
+			transform: scale(0.9);
+			transition: opacity var(--duration-normal) var(--ease-out-expo),
+				transform var(--duration-normal) var(--ease-out-expo);
+		}
+		.slide.visible .reveal-scale {
+			opacity: 1;
+			transform: scale(1);
+		}
+		.reveal-left {
+			opacity: 0;
+			transform: translateX(-50px);
+			transition: opacity var(--duration-normal) var(--ease-out-expo),
+				transform var(--duration-normal) var(--ease-out-expo);
+		}
+		.slide.visible .reveal-left {
+			opacity: 1;
+			transform: translateX(0);
+		}
+		.reveal-right {
+			opacity: 0;
+			transform: translateX(50px);
+			transition: opacity var(--duration-normal) var(--ease-out-expo),
+				transform var(--duration-normal) var(--ease-out-expo);
+		}
+		.slide.visible .reveal-right {
+			opacity: 1;
+			transform: translateX(0);
+		}
+		/* ===========================================
+           PROGRESS BAR
+           =========================================== */
+		.progress-bar {
+			position: fixed;
+			left: 0;
+			top: 0;
+			z-index: 1000;
+			width: 0%;
+			height: 3px;
+			background: var(--accent);
+			box-shadow: 0 0 10px var(--accent-glow);
+			transition: width 0.3s ease;
+		}
+		/* ===========================================
+           NAV DOTS
+           =========================================== */
+		.nav-dots {
+			display: flex;
+			position: fixed;
+			right: 20px;
+			top: 50%;
+			z-index: 100;
+			flex-direction: column;
+			gap: 10px;
+			transform: translateY(-50%);
+		}
+		.nav-dot {
+			border-radius: 50%;
+			width: 8px;
+			height: 8px;
+			background: rgb(255, 255, 255, 0.3);
+			cursor: pointer;
+			transition: all 0.3s ease;
+		}
+		.nav-dot.active {
+			background: var(--accent);
+			box-shadow: 0 0 10px var(--accent-glow);
+			transform: scale(1.3);
+		}
+		.nav-dot:hover {
+			background: rgb(255, 255, 255, 0.6);
+		}
+		/* ===========================================
+           KEYBOARD HINT
+           =========================================== */
+		.keyboard-hint {
+			position: fixed;
+			left: 50%;
+			bottom: 20px;
+			z-index: 100;
+			opacity: 0.5;
+			font-family: var(--font-mono);
+			font-size: var(--small-size);
+			color: var(--text-secondary);
+			transform: translateX(-50%);
+		}
+		.keyboard-hint kbd {
+			display: inline-block;
+			margin: 0 0.2em;
+			padding: 0.2em 0.5em;
+			border: 1px solid rgb(255, 255, 255, 0.2);
+			border-radius: 4px;
+			background: var(--bg-card);
+		}
+		/* ===========================================
+           RESPONSIVE
+           =========================================== */
+		@media (height <=700px) {
+			:root {
+				--slide-padding: clamp(1rem, 3vw, 2.5rem);
+				--content-gap: clamp(0.75rem, 2vw, 1.5rem);
+				--title-size: clamp(1.5rem, 5vw, 3rem);
+			}
+		}
+		@media (height <=600px) {
+			:root {
+				--slide-padding: clamp(0.75rem, 2.5vw, 1.5rem);
+				--content-gap: clamp(0.5rem, 1.5vw, 1rem);
+			}
+			.nav-dots,
+			.keyboard-hint {
+				display: none;
+			}
+		}
+		@media (width <=768px) {
+			.comparison {
+				grid-template-columns: 1fr;
+			}
+			.comparison-divider {
+				transform: rotate(90deg);
+			}
+			.card-grid {
+				grid-template-columns: 1fr;
+			}
+		}
+		@media (prefers-reduced-motion: reduce) {
+			*,
+			*::before,
+			*::after {
+				transition-duration: 0.2s !important;
+				animation-duration: 0.01ms !important;
+			}
+			html {
+				scroll-behavior: auto;
+			}
+		}
+		/* ===========================================
+           TITLE SLIDE SPECIAL
+           =========================================== */
+		.title-slide .slide-content {
+			background: radial-gradient(ellipse at center, rgb(0, 245, 129, 0.1) 0%, transparent 70%);
+		}
+		.title-slide h1 {
+			background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 100%);
+			background-clip: text;
+			-webkit-text-fill-color: transparent;
+		}
+		/* ===========================================
+           SECTION HEADER
+           =========================================== */
+		.section-slide .slide-content {
+			background: linear-gradient(135deg, rgb(0, 245, 129, 0.05) 0%, transparent 50%);
+		}
+		/* ===========================================
+           DEMO TABLE
+           =========================================== */
+		.demo-table {
+			border-collapse: collapse;
+			margin: var(--content-gap) 0;
+			width: 100%;
+			max-width: 1000px;
+			font-size: var(--small-size);
+		}
+		.demo-table th,
+		.demo-table td {
+			padding: 0.8em 1em;
+			border: 1px solid rgb(255, 255, 255, 0.1);
+			text-align: left;
+		}
+		.demo-table th {
+			background: var(--bg-card);
+			font-weight: 600;
+			color: var(--accent);
+		}
+		.demo-table td:first-child {
+			font-weight: 500;
+			color: var(--text-primary);
+		}
+		/* ===========================================
+           GOLDEN QUOTE
+           =========================================== */
+		.golden-quote {
+			margin: var(--content-gap) 0;
+			padding-left: 1.5em;
+			border-left: 3px solid var(--accent);
+		}
+		.golden-quote p {
+			font-weight: 400;
+			font-size: clamp(1.1rem, 2vw, 1.5rem);
+			color: var(--text-primary);
+		}
+		/* ===========================================
+           TAG CLOUD
+           =========================================== */
+		.tag-list {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+			gap: 0.5em;
+		}
+		.tag {
+			display: inline-block;
+			padding: 0.4em 1em;
+			border: 1px solid rgb(0, 245, 129, 0.3);
+			border-radius: 2em;
+			background: var(--bg-card);
+			font-size: var(--small-size);
+			color: var(--text-secondary);
+		}
+	</style>
+</head>
+
+<body>
+	<!-- Progress Bar -->
+	<div class="progress-bar"></div>
+
+	<!-- Navigation Dots -->
+	<nav class="nav-dots"></nav>
+
+	<!-- Keyboard Hint -->
+	<div class="keyboard-hint">
+		<kbd>↑</kbd><kbd>↓</kbd> 或 <kbd>Space</kbd> 翻页
+	</div>
+
+	<!-- ===========================================
+         COVER: 封面背景图
+         =========================================== -->
+	<section class="slide title-slide">
+		<div class="cover-bg"></div>
+		<div class="slide-content"></div>
+		<div class="slide-number">00 / 26</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 1: 标题页
+         =========================================== -->
+	<section class="slide title-slide">
+		<div class="grid-bg"></div>
+		<div class="glow-orb top-right"></div>
+		<div class="glow-orb bottom-left"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<h1 class="reveal">重构生产关系</h1>
+				<p class="subtitle reveal">Trae 驱动的前端基建工程化治理</p>
+				<div class="tag-list reveal">
+					<span class="tag">前端工程化</span>
+					<span class="tag">前端基建化</span>
+					<span class="tag">AI 编程</span>
+					<span class="tag">Bruce FEES</span>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">01 / 26</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 2: AI 编码的繁荣陷阱
+         =========================================== -->
+	<section class="slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<span class="slide-tag reveal">Part 01 · 问题本质</span>
+				<h2 class="reveal">AI 编码的<span class="accent">"繁荣陷阱"</span></h2>
+
+				<div class="card-grid reveal">
+					<div class="card">
+						<div class="card-icon">⚡</div>
+						<h3>效率飞跃</h3>
+						<p>Cursor / Trae / Copilot 代码生成飞快，Vibe Coding 风靡一时</p>
+					</div>
+					<div class="card">
+						<div class="card-icon">📊</div>
+						<h3>数据佐证</h3>
+						<p>GitHub Copilot 报告显示：AI 辅助编码效率提升 <span class="accent">55%</span></p>
+					</div>
+				</div>
+
+				<div class="golden-quote reveal" style="margin-top: var(--content-gap);">
+					<p>但代码正在变成"中间产物"——写完就丢，难以复用</p>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">02 / 26</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 3: AI 代码的 3 大先天缺陷
+         =========================================== -->
+	<section class="slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<h2 class="reveal">AI 代码的 <span class="accent">3 大先天缺陷</span></h2>
+
+				<ul class="feature-list numbered reveal" style="margin-top: var(--content-gap);">
+					<li><strong class="accent">平均水平陷阱</strong><br>AI 学习全网代码 = 生成"平庸的共识"，缺乏深度思考</li>
+					<li><strong class="accent">架构真空</strong><br>没有工程上下文，只管实现不管结构，系统性设计缺失</li>
+					<li><strong class="accent">复用黑洞</strong><br>难以封装为业务 Agent Skills，项目间无法迁移</li>
+				</ul>
+
+				<div class="quote reveal">
+					<p>Vibe Coding 很爽，但当你需要维护 10 个 AI 写的项目时，你会怀念工程化。</p>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">03 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 4: 缺失的工程化底座
+         =========================================== -->
+	<section class="slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<h2 class="reveal">根源：缺失的<span class="accent">工程化底座</span></h2>
+
+				<div class="flow reveal">
+					<div class="flow-item">
+						<div class="flow-icon">🤖</div>
+						<span>AI 编码能力</span>
+					</div>
+					<span class="flow-arrow">×</span>
+					<div class="flow-item">
+						<div class="flow-icon" style="border-color: #ff6b6b;">⚠️</div>
+						<span>无工程约束</span>
+					</div>
+					<span class="flow-arrow">=</span>
+					<div class="flow-item">
+						<div class="flow-icon" style="border-color: #ff6b6b;">💥</div>
+						<span style="color: #ff6b6b;">快但混乱</span>
+					</div>
+				</div>
+
+				<div class="golden-quote reveal" style="margin-top: var(--content-gap);">
+					<p>如同没有交通规则的自动驾驶——快，但混乱</p>
+				</div>
+
+				<h3 class="reveal" style="margin-top: var(--content-gap);">核心观点</h3>
+				<p class="reveal">AI 编码需要"预埋"工程化基因，而非事后修补</p>
+			</div>
+		</div>
+		<div class="slide-number">04 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 5: JS/TS 技术栈的崛起
+         =========================================== -->
+	<section class="slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<h2 class="reveal">为何普通人选择<br><span class="accent">JS/TS 技术栈</span>入门 AI 编程</h2>
+
+				<div class="card-grid reveal" style="margin-top: var(--content-gap);">
+					<div class="card">
+						<div class="card-icon">🌐</div>
+						<h3>全栈统一语言</h3>
+						<p>一门语言走天下：React/Vue 前端 + Node.js/Nest.js/Nuxt.js 后端 + Supabase 数据库</p>
+					</div>
+					<div class="card">
+						<div class="card-icon">🤖</div>
+						<h3>AI 原生友好</h3>
+						<p>TypeScript 类型推断强，AI 容易理解项目结构，代码补全更准确</p>
+					</div>
+					<div class="card">
+						<div class="card-icon">📦</div>
+						<h3>生态丰富</h3>
+						<p>npm 百万级包，AI 可以快速调用成熟工具，无需从零实现</p>
+					</div>
+					<div class="card">
+						<div class="card-icon">⚡</div>
+						<h3>即时反馈</h3>
+						<p>热更新 + 浏览器调试，AI 生成代码可以秒级验证效果</p>
+					</div>
+				</div>
+
+				<div class="golden-quote reveal" style="margin-top: var(--content-gap);">
+					<p>JavaScript/TypeScript 已成为 AI 编程时代的"第一编程语言"</p>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">05 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 6: JS/TS 技术栈的优势
+         =========================================== -->
+	<section class="slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<h2 class="reveal" style="margin-bottom: var(--element-gap);">JS/TS 技术栈的<span class="accent">核心优势</span></h2>
+
+				<div class="flow reveal" style="margin: var(--element-gap) 0;">
+					<div class="flow-item">
+						<div class="flow-icon">⚛️</div>
+						<span>React/Vue</span>
+					</div>
+					<span class="flow-arrow">→</span>
+					<div class="flow-item">
+						<div class="flow-icon">🟢</div>
+						<span>Node.js</span>
+					</div>
+					<span class="flow-arrow">→</span>
+					<div class="flow-item">
+						<div class="flow-icon">🚀</div>
+						<span>Nest.js/Nuxt.js</span>
+					</div>
+					<span class="flow-arrow">→</span>
+					<div class="flow-item">
+						<div class="flow-icon">🐘</div>
+						<span>Supabase</span>
+					</div>
+				</div>
+
+				<div class="card-grid reveal" style="margin-top: var(--element-gap);">
+					<div class="card">
+						<h3>类型即文档</h3>
+						<p>TS 接口 = AI 理解数据的"说明书"</p>
+					</div>
+					<div class="card">
+						<h3>组件即单元</h3>
+						<p>React/Vue 组件 = AI 可复用的"代码块"</p>
+					</div>
+					<div class="card">
+						<h3>钩子即逻辑</h3>
+						<p>自定义 Hooks = AI 封装的"原子操作"</p>
+					</div>
+					<div class="card">
+						<h3>接口即契约</h3>
+						<p>REST/GraphQL = AI 前后端通信"协议"</p>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">06 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 7: 生产关系重构
+         =========================================== -->
+	<section class="slide section-slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<span class="slide-tag reveal">Part 02 · 理论框架</span>
+				<h2 class="reveal">重新定义：什么是<br><span class="accent">"生产关系重构"</span></h2>
+
+				<div class="comparison reveal" style="margin-top: var(--content-gap);">
+					<div class="comparison-item bad">
+						<div class="comparison-label">传统模式</div>
+						<p>开发者 → 编码 → 工具链</p>
+						<p style="margin-top: 0.5em; font-size: 0.9em; color: var(--text-secondary);">人主导，人执行</p>
+					</div>
+					<span class="comparison-divider">→</span>
+					<div class="comparison-item good">
+						<div class="comparison-label">AI 时代</div>
+						<p>开发者 → 设计工程规则 → AI 在约束内编码</p>
+						<p style="margin-top: 0.5em; font-size: 0.9em; color: var(--text-secondary);">人设计，AI 执行</p>
+					</div>
+				</div>
+
+				<div class="quote reveal">
+					<p>AI 是高铁，工程化是轨道。没有轨道，高铁就是脱缰的野马。</p>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">07 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 8: 工程化是 AI 的约束与规律
+         =========================================== -->
+	<section class="slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<h2 class="reveal">工程化是 AI 的<br><span class="accent">"约束与规律"</span></h2>
+
+				<div class="card-grid reveal" style="margin-top: var(--content-gap);">
+					<div class="card">
+						<div class="card-icon">🏗️</div>
+						<h3>脚手架</h3>
+						<p>定义项目 DNA，AI 据此生成符合结构的代码</p>
+					</div>
+					<div class="card">
+						<div class="card-icon">📏</div>
+						<h3>规范体系</h3>
+						<p>ESLint/Stylelint 成为 AI 的"语法边界"</p>
+					</div>
+					<div class="card">
+						<div class="card-icon">🧩</div>
+						<h3>组件标准</h3>
+						<p>UI 库提供 AI 可理解的"原子能力"</p>
+					</div>
+					<div class="card">
+						<div class="card-icon">⚙️</div>
+						<h3>工具链编排</h3>
+						<p>让 AI 的产出自动经过质量关卡</p>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">08 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 9: 结构化 Vibe Coding
+         =========================================== -->
+	<section class="slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<h2 class="reveal">从 Vibe Coding 到<br><span class="accent">"结构化 Vibe Coding"</span></h2>
+
+				<div class="comparison reveal" style="margin-top: var(--content-gap);">
+					<div class="comparison-item bad">
+						<div class="comparison-label">纯 Vibe</div>
+						<p>想到哪写到哪</p>
+						<p style="margin-top: 0.5em; font-size: 0.9em; color: #ff6b6b;">快感之后是债务</p>
+					</div>
+					<span class="comparison-divider">→</span>
+					<div class="comparison-item good">
+						<div class="comparison-label">结构化 Vibe</div>
+						<p>AI 在工程轨道上高速前进</p>
+						<p style="margin-top: 0.5em; font-size: 0.9em; color: var(--accent);">速度与质量兼得</p>
+					</div>
+				</div>
+
+				<div class="flow reveal" style="margin-top: var(--content-gap);">
+					<div class="flow-item">
+						<div class="flow-icon">🚗</div>
+						<span>汽车</span>
+					</div>
+					<span class="flow-arrow">vs</span>
+					<div class="flow-item">
+						<div class="flow-icon" style="border-color: var(--accent);">🚄</div>
+						<span>高铁</span>
+					</div>
+				</div>
+				<p class="reveal" style="margin-top: var(--element-gap);">轨道让速度变得安全可控</p>
+			</div>
+		</div>
+		<div class="slide-number">09 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 10: Bruce FEES 作为 AI 编码基建
+         =========================================== -->
+	<section class="slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<h2 class="reveal">Bruce FEES：<br><span class="accent">AI 编码的工程化底座</span></h2>
+
+				<p class="reveal" style="margin: var(--content-gap) 0;">不是为 AI 设计，但天然适合约束 AI</p>
+
+				<table class="module-table reveal">
+					<thead>
+						<tr>
+							<th>已迁移</th>
+							<th>待迁移</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>bruce-std 规范</td>
+							<td>bruce-app 应用</td>
+						</tr>
+						<tr>
+							<td>bruce-us 工具</td>
+							<td>bruce-ui 组件</td>
+						</tr>
+						<tr>
+							<td>bruce-pkg 发布</td>
+							<td>bruce-lng 语言</td>
+						</tr>
+						<tr>
+							<td>bruce-ico 图标</td>
+							<td>bruce-img 图像</td>
+						</tr>
+						<tr>
+							<td></td>
+							<td>bruce-type 类型</td>
+						</tr>
+					</tbody>
+				</table>
+
+				<p class="reveal" style="margin-top: var(--content-gap);">
+					<strong class="accent">9 个子包</strong> = 9 个维度的工程化约束
+				</p>
+			</div>
+		</div>
+		<div class="slide-number">10 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 11: Monorepo 架构概览
+         =========================================== -->
+	<section class="slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<span class="slide-tag reveal">架构体系 · 核心</span>
+				<h2 class="reveal">TypeScript + Pnpm + Monorepo<br><span class="accent">全链路工程化架构</span></h2>
+
+				<p class="reveal" style="margin: var(--content-gap) 0;">bruce-fees 最佳实践：一套架构，管控从开发到发布的全流程</p>
+
+				<div class="card-grid reveal" style="margin-top: var(--content-gap);">
+					<div class="card">
+						<div class="card-icon">🔷</div>
+						<h3>TypeScript</h3>
+						<p>强类型保障、IDE 智能补全、代码即文档、AI 理解成本低</p>
+					</div>
+					<div class="card">
+						<div class="card-icon">📦</div>
+						<h3>Pnpm Workspace</h3>
+						<p>依赖统一管理、磁盘空间优化、workspace 协议共享</p>
+					</div>
+					<div class="card">
+						<div class="card-icon">🏗️</div>
+						<h3>Monorepo</h3>
+						<p>多包协同管理、统一规范、一键全量构建、版本一致性</p>
+					</div>
+				</div>
+
+				<div class="golden-quote reveal" style="margin-top: var(--content-gap);">
+					<p>Trae + TypeScript + Pnpm Workspace + Monorepo = AI 时代的前端工程化底座</p>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">11 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 12: 依赖安装管控
+         =========================================== -->
+	<section class="slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<h2 class="reveal" style="margin-bottom: var(--element-gap);">依赖安装管控<br><span class="accent">Pnpm Workspace 统一治理</span></h2>
+
+				<div class="card-grid reveal" style="margin-top: var(--element-gap);">
+					<div class="card">
+						<h3>Workspace 协议</h3>
+						<p class="mono" style="font-size: 0.85em;">"@yangzw/bruce-us": "workspace:*"</p>
+						<p style="margin-top: 0.3em; font-size: 0.85em;">内部包直接引用源码，无需发布即可使用</p>
+					</div>
+					<div class="card">
+						<h3>统一 Node 版本</h3>
+						<p class="mono" style="font-size: 0.85em;">"engines": { "node": ">=22.0.0" }</p>
+						<p style="margin-top: 0.3em; font-size: 0.85em;">强制统一运行时环境，避免兼容性问题</p>
+					</div>
+				</div>
+
+				<h3 class="reveal" style="margin-top: var(--element-gap);">Trae × 依赖管控</h3>
+				<ul class="feature-list reveal" style="gap: 0.4em;">
+					<li><strong class="accent">AI 安装依赖</strong>：遵循 Workspace 规范，优先使用内部包</li>
+					<li><strong class="accent">命令规范</strong>：<span class="mono">pnpm -F @yangzw/bruce-xxx add lodash</span></li>
+					<li><strong class="accent">禁止随意安装</strong>：必须通过规范流程，防止依赖混乱</li>
+				</ul>
+
+				<div class="flow reveal" style="margin-top: var(--element-gap);">
+					<div class="flow-item">
+						<div class="flow-icon" style="width: 50px; height: 50px;">🤖</div>
+						<span>AI 安装依赖</span>
+					</div>
+					<span class="flow-arrow">→</span>
+					<div class="flow-item">
+						<div class="flow-icon" style=" border-color: var(--accent);width: 50px; height: 50px;">✅</div>
+						<span>workspace 校验</span>
+					</div>
+					<span class="flow-arrow">→</span>
+					<div class="flow-item">
+						<div class="flow-icon" style=" border-color: var(--accent);width: 50px; height: 50px;">📦</div>
+						<span>统一安装</span>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">12 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 13: 子包管理规范
+         =========================================== -->
+	<section class="slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<h2 class="reveal" style="margin-bottom: var(--element-gap);">子包管理规范<br><span class="accent">标准化输出单元</span></h2>
+
+				<div class="flow reveal" style="margin: var(--element-gap) 0;">
+					<div class="flow-item">
+						<div class="flow-icon" style="width: 50px; height: 50px;">📁</div>
+						<span>packages</span>
+					</div>
+					<span class="flow-arrow">→</span>
+					<div class="flow-item">
+						<div class="flow-icon" style="width: 50px; height: 50px;">📦</div>
+						<span>bruce-xxx</span>
+					</div>
+					<span class="flow-arrow">→</span>
+					<div class="flow-item">
+						<div class="flow-icon" style="width: 50px; height: 50px;">⚙️</div>
+						<span>src</span>
+					</div>
+					<span class="flow-arrow">→</span>
+					<div class="flow-item">
+						<div class="flow-icon" style=" border-color: var(--accent);width: 50px; height: 50px;">📤</div>
+						<span>dist</span>
+					</div>
+				</div>
+
+				<div class="card-grid reveal" style="margin-top: var(--element-gap);">
+					<div class="card">
+						<h3>子包发布配置</h3>
+						<ul style="margin-top: 0.3em; font-size: 0.85em;">
+							<li>• exports 多环境导出</li>
+							<li>• types 类型定义</li>
+							<li>• .npmignore + license</li>
+						</ul>
+					</div>
+					<div class="card">
+						<h3>AI 创建子包规范</h3>
+						<ul style="margin-top: 0.3em; font-size: 0.85em;">
+							<li>• 遵循 package.json 模板</li>
+							<li>• 自动生成 tsup 构建配置</li>
+							<li>• 内置 tsconfig.json</li>
+						</ul>
+					</div>
+					<div class="card">
+						<h3>独立版本管理</h3>
+						<ul style="margin-top: 0.3em; font-size: 0.85em;">
+							<li>• 每个子包独立 version</li>
+							<li>• 支持独立发布 npm</li>
+							<li>• maintainers 统一管理</li>
+						</ul>
+					</div>
+				</div>
+
+				<div class="golden-quote reveal" style="margin-top: var(--element-gap);">
+					<p>Trae + bruce-pkg：AI 创建子包，5 秒生成标准化结构</p>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">13 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 14: 构建与质量管控
+         =========================================== -->
+	<section class="slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<h2 class="reveal" style="margin-bottom: var(--element-gap);">构建与质量管控<br><span class="accent">全链路质量门</span></h2>
+
+				<div class="card-grid reveal" style="margin-top: var(--element-gap);">
+					<div class="card">
+						<h3>单包构建</h3>
+						<p class="mono" style="font-size: 0.85em;">pnpm -F @yangzw/bruce-std run build</p>
+						<p style="margin-top: 0.3em; font-size: 0.85em;">修改单个包时，只构建该包</p>
+					</div>
+					<div class="card">
+						<h3>全量构建</h3>
+						<p class="mono" style="font-size: 0.85em;">pnpm run build</p>
+						<p style="margin-top: 0.3em; font-size: 0.85em;">清空 dist 后按拓扑顺序全量构建</p>
+					</div>
+					<div class="card">
+						<h3>全量检查</h3>
+						<p class="mono" style="font-size: 0.85em;">pnpm run check</p>
+						<p style="margin-top: 0.3em; font-size: 0.85em;">TypeScript 类型全量检查</p>
+					</div>
+					<div class="card">
+						<h3>格式化检查</h3>
+						<p class="mono" style="font-size: 0.85em;">pnpm run lint</p>
+						<p style="margin-top: 0.3em; font-size: 0.85em;">ESLint + Stylelint 代码规范</p>
+					</div>
+				</div>
+
+				<h3 class="reveal" style="margin-top: var(--element-gap);">AI 代码质量门</h3>
+				<ul class="feature-list reveal" style="gap: 0.4em;">
+					<li><strong class="accent">pre-commit 钩子</strong>：Husky 强制 AI 代码通过 ESLint + Stylelint</li>
+					<li><strong class="accent">提交规范</strong>：Commitizen 强制规范 commit message</li>
+					<li><strong class="accent">类型检查</strong>：TypeScript 零 any 类型，AI 代码也不例外</li>
+				</ul>
+
+				<div class="flow reveal" style="margin-top: var(--element-gap);">
+					<div class="flow-item">
+						<div class="flow-icon" style="width: 50px; height: 50px;">🤖</div>
+						<span>AI 写代码</span>
+					</div>
+					<span class="flow-arrow">→</span>
+					<div class="flow-item">
+						<div class="flow-icon" style=" border-color: var(--accent);width: 50px; height: 50px;">🔍</div>
+						<span>Lint 检查</span>
+					</div>
+					<span class="flow-arrow">→</span>
+					<div class="flow-item">
+						<div class="flow-icon" style=" border-color: var(--accent);width: 50px; height: 50px;">📝</div>
+						<span>TS 检查</span>
+					</div>
+					<span class="flow-arrow">→</span>
+					<div class="flow-item">
+						<div class="flow-icon" style=" border-color: var(--accent);width: 50px; height: 50px;">✅</div>
+						<span>提交成功</span>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">14 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 15: 场景 1 - 脚手架即契约
+         =========================================== -->
+	<section class="slide section-slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<span class="slide-tag reveal">Part 03 · 实战场景</span>
+				<h2 class="reveal">场景 1：<br><span class="accent">脚手架即契约</span></h2>
+
+				<div class="card-grid reveal" style="margin-top: var(--content-gap);">
+					<div class="card">
+						<h3>问题</h3>
+						<p>AI 生成项目结构五花八门，无法团队协作</p>
+					</div>
+					<div class="card">
+						<h3>方案</h3>
+						<p>bruce-app 作为项目模板契约</p>
+					</div>
+				</div>
+
+				<ul class="feature-list reveal" style="margin-top: var(--content-gap);">
+					<li><strong class="accent">统一项目结构</strong>：AI 生成的目录树符合团队规范</li>
+					<li><strong class="accent">标准化配置</strong>：ESLint/Stylelint/Prettier 配置自动集成</li>
+					<li><strong class="accent">开箱即用</strong>：Husky + Commitizen 提交规范已配置</li>
+					<li><strong class="accent">多框架支持</strong>：Vite + Webpack + React/Vue 双轨并行</li>
+				</ul>
+
+				<div class="golden-quote reveal" style="margin-top: var(--content-gap);">
+					<p>Trae Prompt："使用 Bruce 规范创建 React 中后台项目" → AI 输出的项目结构完全符合团队标准</p>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">15 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 10: 场景 2 - 规范即护栏
+         =========================================== -->
+	<section class="slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<h2 class="reveal">场景 2：<br><span class="accent">规范即护栏</span></h2>
+
+				<div class="comparison reveal" style="margin-top: var(--content-gap);">
+					<div class="comparison-item bad">
+						<div class="comparison-label">无规范</div>
+						<p>AI 代码风格各异</p>
+						<p style="margin-top: 0.5em; font-size: 0.9em; color: #ff6b6b;">Code Review 变成改格式</p>
+					</div>
+					<span class="comparison-divider">→</span>
+					<div class="comparison-item good">
+						<div class="comparison-label">bruce-std</div>
+						<p>ESLint/Stylelint 成为 AI 的"紧箍咒"</p>
+						<p style="margin-top: 0.5em; font-size: 0.9em; color: var(--accent);">规范不再是阻力</p>
+					</div>
+				</div>
+
+				<div class="card-grid reveal" style="margin-top: var(--content-gap);">
+					<div class="card">
+						<h3>ESLint 规则体系</h3>
+						<p>JS 基础规则 + TS 严格规则 + React/Vue 组件规则 + Eslint 美化规则</p>
+					</div>
+					<div class="card">
+						<h3>Prettier 格式化</h3>
+						<p>统一代码风格：缩进、引号、分号、换行规则自动应用</p>
+					</div>
+					<div class="card">
+						<h3>Stylelint CSS 规范</h3>
+						<p>CSS/SCSS 编写规范，强制属性排序与格式统一</p>
+					</div>
+					<div class="card">
+						<h3>Trae AI 联动</h3>
+						<p>AI 实时读取 .trae/rules，理解规范后输出合规代码</p>
+					</div>
+				</div>
+
+				<div class="golden-quote reveal" style="margin-top: var(--content-gap);">
+					<p>规范不是限制 AI，而是给 AI 清晰的理解边界</p>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">16 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 11: 场景 3 - 组件即标准件
+         =========================================== -->
+	<section class="slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<h2 class="reveal">场景 3：<br><span class="accent">组件即标准件</span></h2>
+
+				<div class="card-grid reveal" style="margin-top: var(--content-gap);">
+					<div class="card">
+						<h3>问题</h3>
+						<p>AI 生成组件随意命名、随意传参、难以复用</p>
+					</div>
+					<div class="card">
+						<h3>方案</h3>
+						<p>bruce-ui 定义组件开发标准</p>
+					</div>
+				</div>
+
+				<h3 class="reveal" style="margin-top: var(--content-gap);">bruce-ui 组件开发标准</h3>
+				<ul class="feature-list reveal">
+					<li><strong class="accent">目录结构标准化</strong>：components/button/index.ts + index.scss + types.ts</li>
+					<li><strong class="accent">类型定义完备</strong>：Props 接口、Emit 类型、Slots 类型全部声明</li>
+					<li><strong class="accent">样式规范统一</strong>：BEM 命名、SCSS 变量、响应式策略</li>
+					<li><strong class="accent">API 设计一致</strong>：属性命名、事件命名、插槽命名全团队统一</li>
+				</ul>
+
+				<div class="golden-quote reveal" style="margin-top: var(--content-gap);">
+					<p>当 AI 知道"一个按钮组件应该长什么样"，它就能生成可直接入库的代码</p>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">17 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 12: 场景 4 - Agent Skills 封装
+         =========================================== -->
+	<section class="slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<h2 class="reveal">场景 4：<br><span class="accent">Agent Skills 封装</span></h2>
+
+				<div class="golden-quote reveal">
+					<p>今天的 AI 代码，明天怎么给其他 AI 用？</p>
+				</div>
+
+				<h3 class="reveal" style="margin-top: var(--content-gap);">工程化能力 → 可复用 Skills</h3>
+				<div class="card-grid reveal" style="margin-top: var(--element-gap);">
+					<div class="card">
+						<h3>创建规范页面</h3>
+						<p>输入页面名称 → 自动生成目录、路由配置、基础组件</p>
+					</div>
+					<div class="card">
+						<h3>封装业务组件</h3>
+						<p>输入业务描述 → 按 bruce-ui 标准生成可复用组件</p>
+					</div>
+					<div class="card">
+						<h3>接入 API</h3>
+						<p>输入接口文档 → 生成类型定义 + 请求函数 + 错误处理</p>
+					</div>
+					<div class="card">
+						<h3>配置国际化</h3>
+						<p>输入业务文本 → 按 bruce-lng 管线自动提取、翻译、替换</p>
+					</div>
+				</div>
+
+				<div class="flow reveal" style="margin-top: var(--content-gap);">
+					<div class="flow-item">
+						<div class="flow-icon">📝</div>
+						<span>个人经验</span>
+					</div>
+					<span class="flow-arrow">→</span>
+					<div class="flow-item">
+						<div class="flow-icon" style="border-color: var(--accent);">🎯</div>
+						<span>Trae Skills</span>
+					</div>
+					<span class="flow-arrow">→</span>
+					<div class="flow-item">
+						<div class="flow-icon" style="border-color: var(--accent);">♻️</div>
+						<span>团队资产</span>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">18 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 13: 场景 5 - 国际化工作流编排
+         =========================================== -->
+	<section class="slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<h2 class="reveal">场景 5：<br><span class="accent">国际化工作流编排</span></h2>
+
+				<div class="card-grid reveal" style="margin-top: var(--content-gap);">
+					<div class="card">
+						<h3>问题</h3>
+						<p>AI 翻译脱离上下文，硬编码散落在各处</p>
+					</div>
+					<div class="card">
+						<h3>方案</h3>
+						<p>bruce-lng 定义国际化处理管线</p>
+					</div>
+				</div>
+
+				<div class="flow reveal" style="margin: var(--content-gap) 0;">
+					<div class="flow-item">
+						<div class="flow-icon">1</div>
+						<span>提取</span>
+					</div>
+					<span class="flow-arrow">→</span>
+					<div class="flow-item">
+						<div class="flow-icon">2</div>
+						<span>翻译</span>
+					</div>
+					<span class="flow-arrow">→</span>
+					<div class="flow-item">
+						<div class="flow-icon">3</div>
+						<span>替换</span>
+					</div>
+					<span class="flow-arrow">→</span>
+					<div class="flow-item">
+						<div class="flow-icon">4</div>
+						<span>校验</span>
+					</div>
+				</div>
+
+				<p class="reveal"><span class="accent">价值：</span>AI 在既定流程中工作，产出可预期</p>
+			</div>
+		</div>
+		<div class="slide-number">19 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 14: 场景 6 - 构建质量门
+         =========================================== -->
+	<section class="slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<h2 class="reveal">场景 6：<br><span class="accent">构建质量门</span></h2>
+
+				<div class="card-grid reveal" style="margin-top: var(--content-gap);">
+					<div class="card">
+						<h3>问题</h3>
+						<p>AI 代码能跑，但构建性能差、包体积大</p>
+					</div>
+					<div class="card">
+						<h3>方案</h3>
+						<p>bruce-app 的构建优化规则成为 AI 的"考试标准"</p>
+					</div>
+				</div>
+
+				<h3 class="reveal" style="margin-top: var(--content-gap);">构建质量门清单</h3>
+				<ul class="feature-list reveal">
+					<li><strong class="accent">包体积监控</strong>：单包不超过 500KB，Tree-shaking 必须生效</li>
+					<li><strong class="accent">构建速度</strong>：开发构建 &lt; 30s，生产构建 &lt; 2min</li>
+					<li><strong class="accent">依赖规范</strong>：禁止随意安装依赖，必须使用 workspace 内部包</li>
+					<li><strong class="accent">类型检查</strong>：TS 类型必须通过，any 类型零容忍</li>
+					<li><strong class="accent">代码分割</strong>：动态 import、按路由分割、第三方库分离</li>
+				</ul>
+
+				<div class="golden-quote reveal" style="margin-top: var(--content-gap);">
+					<p>不只是一次正确，而是持续正确——构建质量门让 AI 代码经得起时间考验</p>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">20 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 15: 重构后的开发范式
+         =========================================== -->
+	<section class="slide section-slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<span class="slide-tag reveal">Part 04 · 升华</span>
+				<h2 class="reveal">重构后的<br><span class="accent">开发范式</span></h2>
+
+				<div class="comparison reveal" style="margin-top: var(--content-gap);">
+					<div class="comparison-item bad">
+						<div class="comparison-label">从前</div>
+						<p style="font-size: 1.2em;">开发者是<br>"代码工人"</p>
+					</div>
+					<span class="comparison-divider">→</span>
+					<div class="comparison-item good">
+						<div class="comparison-label">今后</div>
+						<p style="font-size: 1.2em;">开发者是<br>"规则设计师" + "AI 训练师"</p>
+					</div>
+				</div>
+
+				<h3 class="reveal" style="margin-top: var(--content-gap);">核心能力转变</h3>
+				<div class="tag-list reveal">
+					<span class="tag" style=" padding: 0.5em 1.2em;font-size: 1em;">架构设计 <span class="accent">></span> 编码速度</span>
+					<span class="tag" style=" padding: 0.5em 1.2em;font-size: 1em;">规则定义 <span class="accent">></span> 代码行数</span>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">21 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 16: 工程化作为 AI 时代的元能力
+         =========================================== -->
+	<section class="slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<h2 class="reveal">工程化作为<br><span class="accent">AI 时代的"元能力"</span></h2>
+
+				<ul class="feature-list reveal" style="margin: var(--content-gap) 0;">
+					<li>AI 可以替代编码，但无法替代工程决策</li>
+					<li>优秀的工程化 = 给 AI 更好的上下文（Context）</li>
+				</ul>
+
+				<div class="card reveal" style=" margin-left: auto; margin-right: auto;margin-top: var(--content-gap); max-width: 600px; text-align: center;">
+					<h3 style="color: var(--accent);">Bruce FEES 的价值</h3>
+					<p style="font-size: 1.1em;">为 Trae 提供高质量的工程上下文</p>
+				</div>
+
+				<div class="quote reveal" style="margin-top: var(--content-gap);">
+					<p>重构生产关系，不是让 AI 代替人，而是让人成为更好的规则设计者。</p>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">22 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 17: 开发者建议
+         =========================================== -->
+	<section class="slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<h2 class="reveal">对开发者的<span class="accent">建议</span></h2>
+
+				<div class="card-grid reveal" style="margin-top: var(--content-gap);">
+					<div class="card">
+						<div class="card-icon">1</div>
+						<h3>投资工程化</h3>
+						<p>这是你与 AI 协作的"接口定义"</p>
+					</div>
+					<div class="card">
+						<div class="card-icon">2</div>
+						<h3>封装你的经验</h3>
+						<p>将个人经验转为团队级 Agent Skills</p>
+					</div>
+					<div class="card">
+						<div class="card-icon">3</div>
+						<h3>选择结构化 Vibe</h3>
+						<p>快感与质量可以兼得</p>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">23 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 18: 总结
+         =========================================== -->
+	<section class="slide section-slide">
+		<div class="grid-bg"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<span class="slide-tag reveal">总结</span>
+				<h2 class="reveal">重构生产关系的<span class="accent">3 个层次</span></h2>
+
+				<div class="card-grid reveal" style=" margin-left: auto; margin-right: auto;margin-top: 2rem; max-width: 900px;">
+					<div class="card" style="text-align: center;">
+						<div class="card-icon">🔧</div>
+						<h3>工具层</h3>
+						<p>Trae 作为 AI 编码入口</p>
+					</div>
+					<div class="card" style="text-align: center;">
+						<div class="card-icon">📜</div>
+						<h3>规则层</h3>
+						<p>Bruce FEES 作为工程化约束</p>
+					</div>
+					<div class="card" style="text-align: center;">
+						<div class="card-icon">🚀</div>
+						<h3>范式层</h3>
+						<p>从编码者到规则设计者</p>
+					</div>
+				</div>
+
+				<div class="golden-quote reveal" style="margin-top: 2.5rem;">
+					<p>AI 让每个人都能写代码，但工程化决定代码能活多久。</p>
+				</div>
+			</div>
+		</div>
+		<div class="slide-number">24 / 25</div>
+	</section>
+
+	<!-- ===========================================
+         SLIDE 19: 行动号召
+         =========================================== -->
+	<section class="slide title-slide">
+		<div class="grid-bg"></div>
+		<div class="glow-orb top-right"></div>
+		<div class="glow-orb bottom-left"></div>
+		<div class="slide-content">
+			<div class="slide-inner">
+				<h2 class="reveal">行动号召</h2>
+
+				<div class="tag-list reveal" style="margin: var(--content-gap) 0;">
+					<span class="tag" style="padding: 0.6em 1.5em; font-size: 1.1em;">体验 Trae + Bruce FEES</span>
+				</div>
+				<p class="reveal" style="font-size: 1.2em; color: var(--text-primary);">感受"有约束的速度"</p>
+
+				<div class="card-grid reveal" style="margin-top: var(--content-gap);">
+					<div class="card" style="text-align: center;">
+						<h3 style="color: var(--accent);">成为工程化布道者</h3>
+						<p>让 AI 产出真正可维护的代码</p>
+					</div>
+				</div>
+
+				<div class="golden-quote reveal" style="margin-top: var(--content-gap);">
+					<p>github.com/JowayYoung/bruce-cli</p>
+				</div>
+
+				<p class="reveal" style="margin-top: var(--content-gap); font-size: 1.5em;">
+					<span class="accent">⭐ 欢迎大家 Star</span>
+				</p>
+
+				<p class="reveal" style="margin-top: var(--content-gap); font-size: 1.5em;">
+					<span class="accent">感谢聆听</span>
+				</p>
+			</div>
+		</div>
+		<div class="slide-number">25 / 25</div>
+	</section>
+
+	<script>
+		/* ===========================================
+           SLIDE PRESENTATION CONTROLLER
+           =========================================== */
+		class SlidePresentation {
+			constructor() {
+				this.slides = document.querySelectorAll('.slide');
+				this.currentSlide = 0;
+				this.totalSlides = this.slides.length;
+				this.progressBar = document.querySelector('.progress-bar');
+				this.navDotsContainer = document.querySelector('.nav-dots');
+
+				this.init();
+			}
+
+			init() {
+				this.createNavDots();
+				this.setupIntersectionObserver();
+				this.setupKeyboardNav();
+				this.setupTouchNav();
+				this.setupScrollSnap();
+				this.updateProgress();
+			}
+
+			createNavDots() {
+				this.slides.forEach((_, index) => {
+					const dot = document.createElement('div');
+					dot.className = 'nav-dot' + (index === 0 ? ' active' : '');
+					dot.addEventListener('click', () => this.goToSlide(index));
+					this.navDotsContainer.appendChild(dot);
+				});
+				this.navDots = document.querySelectorAll('.nav-dot');
+			}
+
+			setupIntersectionObserver() {
+				const options = {
+					root: null,
+					rootMargin: '0px',
+					threshold: 0.5
+				};
+
+				const observer = new IntersectionObserver((entries) => {
+					entries.forEach(entry => {
+						if (entry.isIntersecting) {
+							entry.target.classList.add('visible');
+							const index = Array.from(this.slides).indexOf(entry.target);
+							this.currentSlide = index;
+							this.updateNavDots();
+							this.updateProgress();
+						}
+					});
+				}, options);
+
+				this.slides.forEach(slide => observer.observe(slide));
+			}
+
+			setupKeyboardNav() {
+				document.addEventListener('keydown', (e) => {
+					switch (e.key) {
+						case 'ArrowDown':
+						case 'ArrowRight':
+						case ' ':
+						case 'PageDown':
+							e.preventDefault();
+							this.nextSlide();
+							break;
+						case 'ArrowUp':
+						case 'ArrowLeft':
+						case 'PageUp':
+							e.preventDefault();
+							this.prevSlide();
+							break;
+						case 'Home':
+							e.preventDefault();
+							this.goToSlide(0);
+							break;
+						case 'End':
+							e.preventDefault();
+							this.goToSlide(this.totalSlides - 1);
+							break;
+					}
+				});
+			}
+
+			setupTouchNav() {
+				let touchStartY = 0;
+				let touchEndY = 0;
+
+				document.addEventListener('touchstart', (e) => {
+					touchStartY = e.changedTouches[0].screenY;
+				}, {
+					passive: true
+				});
+
+				document.addEventListener('touchend', (e) => {
+					touchEndY = e.changedTouches[0].screenY;
+					const diff = touchStartY - touchEndY;
+
+					if (Math.abs(diff) > 50) {
+						if (diff > 0) {
+							this.nextSlide();
+						} else {
+							this.prevSlide();
+						}
+					}
+				}, {
+					passive: true
+				});
+			}
+
+			setupScrollSnap() {
+				let isScrolling = false;
+
+				document.addEventListener('wheel', (e) => {
+					if (isScrolling) return;
+
+					isScrolling = true;
+					setTimeout(() => {
+						isScrolling = false;
+					}, 800);
+				}, {
+					passive: true
+				});
+			}
+
+			goToSlide(index) {
+				if (index >= 0 && index < this.totalSlides) {
+					this.slides[index].scrollIntoView({
+						behavior: 'smooth'
+					});
+				}
+			}
+
+			nextSlide() {
+				if (this.currentSlide < this.totalSlides - 1) {
+					this.goToSlide(this.currentSlide + 1);
+				}
+			}
+
+			prevSlide() {
+				if (this.currentSlide > 0) {
+					this.goToSlide(this.currentSlide - 1);
+				}
+			}
+
+			updateNavDots() {
+				this.navDots.forEach((dot, index) => {
+					dot.classList.toggle('active', index === this.currentSlide);
+				});
+			}
+
+			updateProgress() {
+				const progress = ((this.currentSlide + 1) / this.totalSlides) * 100;
+				this.progressBar.style.width = progress + '%';
+			}
+		}
+
+		document.addEventListener('DOMContentLoaded', () => {
+			new SlidePresentation();
+		});
+	</script>
+</body>
+
+</html>
